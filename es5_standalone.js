@@ -66,17 +66,16 @@ function _unsupported_iterable_to_array(o, minLen) {
     if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _array_like_to_array(o, minLen);
 }
 
-// REQUIRES CAN BE LEFT OUT IN ABGABE :)
-
+// 4 LINES BELOW THIS COMMENT CAN BE OMITTED IN ABGABE :)
 
 var _require = require("./player-api"), walk = _require.walk, turnLeft = _require.turnLeft, turnRight = _require.turnRight, isFrontClear = _require.isFrontClear, look = _require.look, collectCoin = _require.collectCoin, isExitReached = _require.isExitReached, openBox = _require.openBox;
 var _require1 = require("./game"), initGame = _require1.initGame, printMatrix = _require1.printMatrix;
 
-
-//////// CODE IS HERE
-
 var matrixInput = "#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#\n#,P, , , , , , , , , , ,#, , , , , , ,#\n#, , , , , , , , , , , ,#, , , , , , ,#\n#, , , ,#, , , ,#,#,#,#,#, , , , , , ,#\n#, , , ,#, , , , , , , ,#,#,#,#, , , ,#\n#, , , ,#, , , ,#, , , ,$, , , , , , ,#\n#,#,#,#,#, , , ,#, , , , , , , ,$, , ,#\n#, , , , , , , ,#, , , , , ,?, , , , ,#\n#, , ,$, , , , ,#,#,#,#,#,#,#,#,#,#,#,#\n#, , , , , , , , , , , , , , , , , , ,#\n#, , , ,#, , , ,#,#,#,#,#,#,#,#,#, , ,#\n#, ,#, ,#, , , , , , ,?, , ,#, , , , ,#\n#,#,#, ,#,#,#,#,#, ,#,#,#,#,#, , , , ,#\n#, , , , , , , ,#, , , , , ,#, , , ,#,#\n#, , , ,#,#,#,#,#, , , , , ,#,#, , ,?,#\n#, , , ,#, , , , , , , , , ,#, , , , ,#\n#,#,#,#,#, ,#,#,#,#,#,#,#, ,#, ,#,#,#,#\n#, , , , , ,#, , , , , , , ,#, , , , ,#\n#, , , , , ,#, , , , , , , ,#, , ,@, ,#\n#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#";
 initGame(matrixInput);
+
+// ABGABE STARTS HERE
+
 var LabyrinthSolver = /*#__PURE__*/ function() {
     "use strict";
     function LabyrinthSolver(startPosition) {
@@ -455,11 +454,8 @@ var LabyrinthSolver = /*#__PURE__*/ function() {
     ]);
     return LabyrinthSolver;
 }();
-printMatrix();
-var solver = new LabyrinthSolver([
-    1,
-    1
-]);
+
+var solver = new LabyrinthSolver([1, 1]);
 solver.solve();
-printMatrix();
+
 
