@@ -1,337 +1,327 @@
-const { walk, turnLeft, turnRight, isFrontClear, look, collectCoin, isExitReached, openBox } = require("./player-api");
-const { initGame, printMatrix } = require("./game");
+var playerApi = require("./player-api");
+var game = require("./game");
+
+var walk = playerApi.walk;
+var turnLeft = playerApi.turnLeft;
+var turnRight = playerApi.turnRight;
+var isFrontClear = playerApi.isFrontClear;
+var look = playerApi.look;
+var collectCoin = playerApi.collectCoin;
+var isExitReached = playerApi.isExitReached;
+var openBox = playerApi.openBox;
+
+var initGame = game.initGame;
+var printMatrix = game.printMatrix;
 
 // drawMap = () => {} // needed for standalone usage
 
-const matrixInput =
-  `#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#
-#,P, , , , , , , , , , ,#, , , , , , ,#
-#, , , , , , , , , , , ,#, , , , , , ,#
-#, , , ,#, , , ,#,#,#,#,#, , , , , , ,#
-#, , , ,#, , , , , , , ,#,#,#,#, , , ,#
-#, , , ,#, , , ,#, , , ,$, , , , , , ,#
-#,#,#,#,#, , , ,#, , , , , , , ,$, , ,#
-#, , , , , , , ,#, , , , , ,?, , , , ,#
-#, , ,$, , , , ,#,#,#,#,#,#,#,#,#,#,#,#
-#, , , , , , , , , , , , , , , , , , ,#
-#, , , ,#, , , ,#,#,#,#,#,#,#,#,#, , ,#
-#, ,#, ,#, , , , , , ,?, , ,#, , , , ,#
-#,#,#, ,#,#,#,#,#, ,#,#,#,#,#, , , , ,#
-#, , , , , , , ,#, , , , , ,#, , , ,#,#
-#, , , ,#,#,#,#,#, , , , , ,#,#, , ,?,#
-#, , , ,#, , , , , , , , , ,#, , , , ,#
-#,#,#,#,#, ,#,#,#,#,#,#,#, ,#, ,#,#,#,#
-#, , , , , ,#, , , , , , , ,#, , , , ,#
-#, , , , , ,#, , , , , , , ,#, , ,@, ,#
-#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#`;
-
-initGame(matrixInput);
+var matrixInput =
+  "#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#\n" +
+  "#,P, , , , , , , , , , ,#, , , , , , ,#\n" +
+  "#, , , , , , , , , , , ,#, , , , , , ,#\n" +
+  "#, , , ,#, , , ,#,#,#,#,#, , , , , , ,#\n" +
+  "#, , , ,#, , , , , , , ,#,#,#,#, , , ,#\n" +
+  "#, , , ,#, , , ,#, , , ,$, , , , , , ,#\n" +
+  "#,#,#,#,#, , , ,#, , , , , , , ,$, , ,#\n" +
+  "#, , , , , , , ,#, , , , , ,?, , , , ,#\n" +
+  "#, , ,$, , , , ,#,#,#,#,#,#,#,#,#,#,#,#\n" +
+  "#, , , , , , , , , , , , , , , , , , ,#\n" +
+  "#, , , ,#, , , ,#,#,#,#,#,#,#,#,#, , ,#\n" +
+  "#, ,#, ,#, , , , , , ,?, , ,#, , , , ,#\n" +
+  "#,#,#, ,#,#,#,#,#, ,#,#,#,#,#, , , , ,#\n" +
+  "#, , , , , , , ,#, , , , , ,#, , , ,#,#\n" +
+  "#, , , ,#,#,#,#,#, , , , , ,#,#, , ,?,#\n" +
+  "#, , , ,#, , , , , , , , , ,#, , , , ,#\n" +
+  "#,#,#,#,#, ,#,#,#,#,#,#,#, ,#, ,#,#,#,#\n" +
+  "#, , , , , ,#, , , , , , , ,#, , , , ,#\n" +
+  "#, , , , , ,#, , , , , , , ,#, , ,@, ,#\n" +
+  "#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#";
 
 
-class LabyrinthSolver {
-  constructor(startPosition) {
-    this.queue = [];
-    this.visited = new Set();
-    this.distances = new Map();
-    this.previousDirections = new Map();
+function getNeighbors(position) {
+  const [x, y] = position;
+  var neighbors = [];
 
-    this.currentPosition = startPosition || [1, 1];
-    this.currentDirection = "N"; // Assume starting direction is North
-
-    this.exitPosition = null; // To be determined when found
-  }
-
-  enqueue(position, distance) {
-    this.queue.push({ position, distance });
-    this.queue.sort((a, b) => a.distance - b.distance); // Priority queue
-  }
-
-  getNeighbors(position) {
-    const [x, y] = position;
-    let neighbors = [];
-
-    //north
-    if (y-1 > 0) {
-      this.turnNorth();
-      neighbors.push({
-        position: [x, y-1],
-        prevDirection: "S",
-        weight: this.weightOfNodeInFrontOfPlayer()
-      });
-    }
-
-    //east
-    this.turnEast();
+  //north
+  if (y-1 > 0) {
+    turnNorth();
     neighbors.push({
-      position: [x+1, y],
-      prevDirection: "W",
-      weight: this.weightOfNodeInFrontOfPlayer()
+      position: [x, y-1],
+      prevDirection: "S",
+      weight: weightOfNodeInFrontOfPlayer()
     });
-
-    //south
-    this.turnSouth();
-    neighbors.push({
-      position: [x, y+1],
-      prevDirection: "N",
-      weight: this.weightOfNodeInFrontOfPlayer()
-    });
-
-    //west
-    this.turnWest();
-    neighbors.push({
-      position: [x-1, y],
-      prevDirection: "E",
-      weight: this.weightOfNodeInFrontOfPlayer()
-    });
-
-    return neighbors;
   }
 
-  solve() {
+  //east
+  turnEast();
+  neighbors.push({
+    position: [x+1, y],
+    prevDirection: "W",
+    weight: weightOfNodeInFrontOfPlayer()
+  });
 
-    this.dijkstra();
+  //south
+  turnSouth();
+  neighbors.push({
+    position: [x, y+1],
+    prevDirection: "N",
+    weight: weightOfNodeInFrontOfPlayer()
+  });
 
-    if (!this.exitPosition) {
-      return console.log("No exit found.");
-    }
+  //west
+  turnWest();
+  neighbors.push({
+    position: [x-1, y],
+    prevDirection: "E",
+    weight: weightOfNodeInFrontOfPlayer()
+  });
 
-    console.clear();
-    this.log("Navigating to the exit...");
-    this.walkToBeginning();
+  return neighbors;
+}
 
-    for (const direction of this.pathToNodeFromStart(this.exitPosition)) {
-      this.walkInDirection(direction);
-      collectCoin();
-      openBox();
-      printMatrix();
-    }
+function solve() {
 
+  dijkstra();
+
+  if (!exitPosition) {
+    return console.log("No exit found.");
   }
 
-  dijkstra() {
-    solver.enqueue(this.currentPosition, 0);
-    while (this.queue.length > 0) {
+  console.clear();
+  console.log("Navigating to the exit...");
+  walkToBeginning();
 
-      const { position } = this.queue.shift();
-
-      this.walkTo(position);
-
-      if (isExitReached()) {
-        this.log("Exit found at position:", position);
-        this.exitPosition = [position[0], position[1]];
-        break;
-      }
-
-      if (this.visited.has(position.toString())) {
-        continue;
-      }
-
-      this.visited.add(position.toString());
-
-      for (const { position: neighborPos, weight, prevDirection } of this.getNeighbors(position).filter(n => n.weight < Infinity)) {
-
-        if (this.visited.has(neighborPos.toString()))
-          continue;
-
-        const tentativeDistance = (this.distances.get(position.toString()) || 0) + weight;
-        if (tentativeDistance < (this.distances.get(neighborPos.toString()) || Infinity)) {
-          this.distances.set(neighborPos.toString(), tentativeDistance);
-          this.previousDirections.set(neighborPos.toString(), prevDirection);
-          this.enqueue(neighborPos, tentativeDistance);
-        }
-      }
-
-    }
-  }
-
-  walkToBeginning() {
-    while (this.previousDirections.has(this.currentPosition.toString())) {
-      let previousDirection = this.previousDirections.get(this.currentPosition.toString());
-      this.walkInDirection(previousDirection);
-    }
-  }
-
-  walkInDirection(direction) {
-      switch (direction) {
-        case "N":
-          this.turnNorth();
-          this.currentPosition[1] -= 1;
-          walk();
-          break
-        case "E":
-          this.turnEast();
-          this.currentPosition[0] += 1;
-          walk();
-          break
-        case "S":
-          this.turnSouth();
-          this.currentPosition[1] += 1;
-          walk();
-          break
-        case "W":
-          this.turnWest();
-          this.currentPosition[0] -= 1;
-          walk();
-          break
-      };
-  }
-
-  pathToNodeFromStart(nodePosition) {
-    let tempPos = [nodePosition[0], nodePosition[1]];
-    let directionsToGoFromBeginning = [];
-    while (this.previousDirections.has(tempPos.toString())) {
-      switch (this.previousDirections.get(tempPos.toString())) {
-        case "N":
-          this.turnNorth();
-          directionsToGoFromBeginning.push("S");
-          tempPos[1] -= 1;
-          break
-        case "E":
-          this.turnEast();
-          directionsToGoFromBeginning.push("W");
-          tempPos[0] += 1;
-          break
-        case "S":
-          this.turnSouth();
-          directionsToGoFromBeginning.push("N");
-          tempPos[1] += 1;
-          break
-        case "W":
-          this.turnWest();
-          directionsToGoFromBeginning.push("E");
-          tempPos[0] -= 1;
-          break
-      }
-    }
-    directionsToGoFromBeginning.reverse();
-    return directionsToGoFromBeginning;
-  }
-
-  walkTo(targetPos) {
-    this.walkToBeginning();
-    let directionsToGoFromBeginning = this.pathToNodeFromStart(targetPos);
-
-    for (const direction of directionsToGoFromBeginning) {
-      this.walkInDirection(direction);
-    }
-  }
-
-  log(...data) {
-    console.debug(data);
-  }
-
-  weightOfNodeInFrontOfPlayer() {
-    switch (look(1)) {
-      case "$":
-      case "?":
-        // return -100;
-      default:
-        return isFrontClear() ? 1 : Infinity;
-    }
-  }
-
-  turnNorth() {
-    switch (this.currentDirection) {
-      case "N":
-        break;
-      case "E":
-        turnLeft();
-        break;
-      case "S":
-        turnLeft();
-        turnLeft();
-        break;
-      case "W":
-        turnRight();
-        break;
-      default:
-        console.error("panic at the disco");
-        process.exit(1);
-        break;
-    }
-    this.currentDirection = "N";
-  }
-
-  turnEast() {
-    switch (this.currentDirection) {
-      case "E":
-        break;
-      case "S":
-        turnLeft();
-        break;
-      case "W":
-        turnLeft();
-        turnLeft();
-        break;
-      case "N":
-        turnRight();
-        break;
-      default:
-        console.error("panic at the disco");
-        process.exit(1);
-        break;
-    }
-    this.currentDirection = "E";
-  }
-
-  turnSouth() {
-    switch (this.currentDirection) {
-      case "S":
-        break;
-      case "W":
-        turnLeft();
-        break;
-      case "N":
-        turnLeft();
-        turnLeft();
-        break;
-      case "E":
-        turnRight();
-        break;
-      default:
-        console.error("panic at the disco");
-        process.exit(1);
-        break;
-    }
-    this.currentDirection = "S";
-  }
-
-  turnWest() {
-    switch (this.currentDirection) {
-      case "W":
-        break;
-      case "N":
-        turnLeft();
-        break;
-      case "E":
-        turnLeft();
-        turnLeft();
-        break;
-      case "S":
-        turnRight();
-        break;
-      default:
-        console.error("panic at the disco");
-        process.exit(1);
-        break;
-    }
-    this.currentDirection = "W";
+  for (const direction of pathToNodeFromStart(exitPosition)) {
+    walkInDirection(direction);
+    collectCoin();
+    openBox();
+    printMatrix();
   }
 
 }
 
+function dijkstra() {
+  while (queue.length > 0) {
 
+    const { position } = queue.shift();
+
+    if (visited.has(position.toString()))
+      continue;
+
+    walkTo(position);
+    visited.add(position.toString());
+
+    if (isExitReached()) {
+      console.log("Exit found at position:", position);
+      exitPosition = [position[0], position[1]];
+      break;
+    }
+
+    for (const { position: neighborPos, weight, prevDirection } of getNeighbors(position).filter(n => n.weight < Infinity)) {
+
+      if (visited.has(neighborPos.toString()))
+        continue;
+
+      const tentativeDistance = distances.get(position.toString()) + weight;
+      if (!(tentativeDistance > distances.get(neighborPos.toString()))) {
+        distances.set(neighborPos.toString(), tentativeDistance);
+        previousDirections.set(neighborPos.toString(), prevDirection);
+
+        // Enqueue into Priority queue
+        queue.push({ position: neighborPos, distance: tentativeDistance });
+        queue.sort((a, b) => a.distance - b.distance);
+      }
+    }
+
+  }
+}
+
+function walkToBeginning() {
+  while (previousDirections.has(currentPosition.toString())) {
+    var previousDirection = previousDirections.get(currentPosition.toString());
+    walkInDirection(previousDirection);
+  }
+}
+
+function walkInDirection(direction) {
+    switch (direction) {
+      case "N":
+        turnNorth();
+        currentPosition[1] -= 1;
+        walk();
+        break
+      case "E":
+        turnEast();
+        currentPosition[0] += 1;
+        walk();
+        break
+      case "S":
+        turnSouth();
+        currentPosition[1] += 1;
+        walk();
+        break
+      case "W":
+        turnWest();
+        currentPosition[0] -= 1;
+        walk();
+        break
+    };
+}
+
+function pathToNodeFromStart(nodePosition) {
+  var tempPos = [nodePosition[0], nodePosition[1]];
+  var directionsToGoFromBeginning = [];
+  while (previousDirections.has(tempPos.toString())) {
+    switch (previousDirections.get(tempPos.toString())) {
+      case "N":
+        turnNorth();
+        directionsToGoFromBeginning.push("S");
+        tempPos[1] -= 1;
+        break
+      case "E":
+        turnEast();
+        directionsToGoFromBeginning.push("W");
+        tempPos[0] += 1;
+        break
+      case "S":
+        turnSouth();
+        directionsToGoFromBeginning.push("N");
+        tempPos[1] += 1;
+        break
+      case "W":
+        turnWest();
+        directionsToGoFromBeginning.push("E");
+        tempPos[0] -= 1;
+        break
+    }
+  }
+  directionsToGoFromBeginning.reverse();
+  return directionsToGoFromBeginning;
+}
+
+function walkTo(targetPos) {
+  walkToBeginning();
+  var directionsToGoFromBeginning = pathToNodeFromStart(targetPos);
+
+  for (const direction of directionsToGoFromBeginning) {
+    walkInDirection(direction);
+  }
+}
+
+function weightOfNodeInFrontOfPlayer() {
+  switch (look(1)) {
+    case "$":
+    case "?":
+      // return -100;
+    default:
+      return isFrontClear() ? 1 : Infinity;
+  }
+}
+
+function turnNorth() {
+  switch (currentDirection) {
+    case "N":
+      break;
+    case "E":
+      turnLeft();
+      break;
+    case "S":
+      turnLeft();
+      turnLeft();
+      break;
+    case "W":
+      turnRight();
+      break;
+    default:
+      console.error("panic at the disco");
+      process.exit(1);
+      break;
+  }
+  currentDirection = "N";
+}
+
+function turnEast() {
+  switch (currentDirection) {
+    case "E":
+      break;
+    case "S":
+      turnLeft();
+      break;
+    case "W":
+      turnLeft();
+      turnLeft();
+      break;
+    case "N":
+      turnRight();
+      break;
+    default:
+      console.error("panic at the disco");
+      process.exit(1);
+      break;
+  }
+  currentDirection = "E";
+}
+
+function turnSouth() {
+  switch (currentDirection) {
+    case "S":
+      break;
+    case "W":
+      turnLeft();
+      break;
+    case "N":
+      turnLeft();
+      turnLeft();
+      break;
+    case "E":
+      turnRight();
+      break;
+    default:
+      console.error("panic at the disco");
+      process.exit(1);
+      break;
+  }
+  currentDirection = "S";
+}
+
+function turnWest() {
+  switch (currentDirection) {
+    case "W":
+      break;
+    case "N":
+      turnLeft();
+      break;
+    case "E":
+      turnLeft();
+      turnLeft();
+      break;
+    case "S":
+      turnRight();
+      break;
+    default:
+      console.error("panic at the disco");
+      process.exit(1);
+      break;
+  }
+  currentDirection = "W";
+}
+
+
+initGame(matrixInput);
+
+var startPosition = [1, 1];
+
+var visited = new Set();
+var distances = new Map();
+var previousDirections = new Map();
+var queue = [ { position: startPosition, distance: 0 } ];
+
+var currentPosition = startPosition;
+var currentDirection = "N"; // Assume starting direction is North
+var exitPosition = null; // To be determined when found
 
 printMatrix();
-
-const solver = new LabyrinthSolver([1, 1]);
-solver.solve();
-
+solve();
 printMatrix();
-
-
-
-
-
 
 
