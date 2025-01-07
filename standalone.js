@@ -13,8 +13,6 @@ var openBox = playerApi.openBox;
 var initGame = game.initGame;
 var printMatrix = game.printMatrix;
 
-// drawMap = () => {} // needed for standalone usage
-
 var matrixInput =
   "#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#\n" +
   "#,P, , , , , , , , , , ,#, , , , , , ,#\n" +
@@ -37,41 +35,41 @@ var matrixInput =
   "#, , , , , ,#, , , , , , , ,#, , ,@, ,#\n" +
   "#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#,#";
 
-
 function getNeighbors(position) {
-  const [x, y] = position;
+  var x = position[0];
+  var y = position[1];
   var neighbors = [];
 
-  //north
-  if (y-1 > 0) {
+  // north
+  if (y - 1 > 0) {
     turnNorth();
     neighbors.push({
-      position: [x, y-1],
+      position: [x, y - 1],
       prevDirection: "S",
       weight: weightOfNodeInFrontOfPlayer()
     });
   }
 
-  //east
+  // east
   turnEast();
   neighbors.push({
-    position: [x+1, y],
+    position: [x + 1, y],
     prevDirection: "W",
     weight: weightOfNodeInFrontOfPlayer()
   });
 
-  //south
+  // south
   turnSouth();
   neighbors.push({
-    position: [x, y+1],
+    position: [x, y + 1],
     prevDirection: "N",
     weight: weightOfNodeInFrontOfPlayer()
   });
 
-  //west
+  // west
   turnWest();
   neighbors.push({
-    position: [x-1, y],
+    position: [x - 1, y],
     prevDirection: "E",
     weight: weightOfNodeInFrontOfPlayer()
   });
@@ -80,36 +78,34 @@ function getNeighbors(position) {
 }
 
 function solve() {
-
   dijkstra();
 
-  if (!exitPosition) {
+  if (!exitPosition)
     return console.log("No exit found.");
-  }
 
   console.clear();
   console.log("Navigating to the exit...");
   walkToBeginning();
 
-  for (const direction of pathToNodeFromStart(exitPosition)) {
-    walkInDirection(direction);
+  var path = pathToNodeFromStart(exitPosition);
+  for (var i = 0; i < path.length; i++) {
+    walkInDirection(path[i]);
     collectCoin();
     openBox();
     printMatrix();
   }
-
 }
 
 function dijkstra() {
   while (queue.length > 0) {
+    var current = queue.shift();
+    var position = current.position;
 
-    const { position } = queue.shift();
-
-    if (visited.has(position.toString()))
+     if (isVisited(position))
       continue;
 
     walkTo(position);
-    visited.add(position.toString());
+    markVisited(position);
 
     if (isExitReached()) {
       console.log("Exit found at position:", position);
@@ -117,84 +113,94 @@ function dijkstra() {
       break;
     }
 
-    for (const { position: neighborPos, weight, prevDirection } of getNeighbors(position).filter(n => n.weight < Infinity)) {
+    var neighbors = getNeighbors(position).filter(function (n) {
+      return n.weight < Infinity;
+    });
 
-      if (visited.has(neighborPos.toString()))
+    for (var i = 0; i < neighbors.length; i++) {
+      var neighbor = neighbors[i];
+      var neighborPos = neighbor.position;
+      var weight = neighbor.weight;
+      var prevDirection = neighbor.prevDirection;
+
+      if (isVisited(neighborPos))
         continue;
 
-      const tentativeDistance = distances.get(position.toString()) + weight;
-      if (!(tentativeDistance > distances.get(neighborPos.toString()))) {
-        distances.set(neighborPos.toString(), tentativeDistance);
-        previousDirections.set(neighborPos.toString(), prevDirection);
+      var tentativeDistance = getDistance(position) + weight;
+      if (tentativeDistance < getDistance(neighborPos)) {
+        setDistance(neighborPos, tentativeDistance);
+        setPreviousDirection(neighborPos, prevDirection);
 
-        // Enqueue into Priority queue
         queue.push({ position: neighborPos, distance: tentativeDistance });
-        queue.sort((a, b) => a.distance - b.distance);
+        queue.sort(function (a, b) {
+          return a.distance - b.distance;
+        });
       }
     }
-
   }
 }
 
 function walkToBeginning() {
-  while (previousDirections.has(currentPosition.toString())) {
-    var previousDirection = previousDirections.get(currentPosition.toString());
+  while (hasPreviousDirection(currentPosition)) {
+    var previousDirection = getPreviousDirection(currentPosition);
     walkInDirection(previousDirection);
   }
 }
 
 function walkInDirection(direction) {
-    switch (direction) {
-      case "N":
-        turnNorth();
-        currentPosition[1] -= 1;
-        walk();
-        break
-      case "E":
-        turnEast();
-        currentPosition[0] += 1;
-        walk();
-        break
-      case "S":
-        turnSouth();
-        currentPosition[1] += 1;
-        walk();
-        break
-      case "W":
-        turnWest();
-        currentPosition[0] -= 1;
-        walk();
-        break
-    };
+  switch (direction) {
+    case "N":
+      turnNorth();
+      currentPosition[1] -= 1;
+      walk();
+      break;
+    case "E":
+      turnEast();
+      currentPosition[0] += 1;
+      walk();
+      break;
+    case "S":
+      turnSouth();
+      currentPosition[1] += 1;
+      walk();
+      break;
+    case "W":
+      turnWest();
+      currentPosition[0] -= 1;
+      walk();
+      break;
+  }
 }
 
 function pathToNodeFromStart(nodePosition) {
   var tempPos = [nodePosition[0], nodePosition[1]];
   var directionsToGoFromBeginning = [];
-  while (previousDirections.has(tempPos.toString())) {
-    switch (previousDirections.get(tempPos.toString())) {
+
+  while (hasPreviousDirection(tempPos)) {
+    switch (getPreviousDirection(tempPos)) {
       case "N":
         turnNorth();
         directionsToGoFromBeginning.push("S");
         tempPos[1] -= 1;
-        break
+        break;
       case "E":
         turnEast();
         directionsToGoFromBeginning.push("W");
         tempPos[0] += 1;
-        break
+        break;
       case "S":
         turnSouth();
         directionsToGoFromBeginning.push("N");
         tempPos[1] += 1;
-        break
+        break;
       case "W":
         turnWest();
         directionsToGoFromBeginning.push("E");
         tempPos[0] -= 1;
-        break
+        break;
     }
   }
+
   directionsToGoFromBeginning.reverse();
   return directionsToGoFromBeginning;
 }
@@ -203,8 +209,8 @@ function walkTo(targetPos) {
   walkToBeginning();
   var directionsToGoFromBeginning = pathToNodeFromStart(targetPos);
 
-  for (const direction of directionsToGoFromBeginning) {
-    walkInDirection(direction);
+  for (var i = 0; i < directionsToGoFromBeginning.length; i++) {
+    walkInDirection(directionsToGoFromBeginning[i]);
   }
 }
 
@@ -306,15 +312,70 @@ function turnWest() {
   currentDirection = "W";
 }
 
+function isVisited(position) {
+  for (var i = 0; i < visited.length; i++) {
+    if (visited[i][0] === position[0] && visited[i][1] === position[1]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function markVisited(position) {
+  visited.push([position[0], position[1]]);
+}
+
+function getDistance(position) {
+  for (var i = 0; i < distances.length; i++) {
+    if (distances[i][0][0] === position[0] && distances[i][0][1] === position[1]) {
+      return distances[i][1];
+    }
+  }
+  return Infinity;
+}
+
+function setDistance(position, distance) {
+  for (var i = 0; i < distances.length; i++) {
+    if (distances[i][0][0] === position[0] && distances[i][0][1] === position[1]) {
+      distances[i][1] = distance;
+      return;
+    }
+  }
+  distances.push([[position[0], position[1]], distance]);
+}
+
+function getPreviousDirection(position) {
+  for (var i = 0; i < previousDirections.length; i++) {
+    if (previousDirections[i][0][0] === position[0] && previousDirections[i][0][1] === position[1]) {
+      return previousDirections[i][1];
+    }
+  }
+  return null;
+}
+
+function setPreviousDirection(position, direction) {
+  for (var i = 0; i < previousDirections.length; i++) {
+    if (previousDirections[i][0][0] === position[0] && previousDirections[i][0][1] === position[1]) {
+      previousDirections[i][1] = direction;
+      return;
+    }
+  }
+  previousDirections.push([[position[0], position[1]], direction]);
+}
+
+function hasPreviousDirection(position) {
+  return getPreviousDirection(position) !== null;
+}
+
 
 initGame(matrixInput);
 
 var startPosition = [1, 1];
 
-var visited = new Set();
-var distances = new Map();
-var previousDirections = new Map();
-var queue = [ { position: startPosition, distance: 0 } ];
+var visited = [];
+var distances = [[[startPosition[0], startPosition[1]], 0]];
+var previousDirections = [];
+var queue = [{ position: startPosition, distance: 0 }];
 
 var currentPosition = startPosition;
 var currentDirection = "N"; // Assume starting direction is North
@@ -323,5 +384,4 @@ var exitPosition = null; // To be determined when found
 printMatrix();
 solve();
 printMatrix();
-
 
